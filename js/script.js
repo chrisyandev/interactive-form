@@ -41,7 +41,7 @@ $paypalDiv.hide();
 $bitcoinDiv.hide();
 /** End of on page load section **/
 
-// Shows the input field for 'Other' Job Role
+// Shows the 'Other' input field if the 'other' option is selected
 $jobTitleSelect.on('change', () => {
 	if ($jobTitleSelect.val() === 'other') {
 		$otherJobField.show();
@@ -290,7 +290,6 @@ $submitButton.on('click', (e) => {
 	if ($paymentSelect.val() === 'Credit Card') {
 		if (creditCardRegex.test($cardNumberField.val())) {
 			isCardNumberValid = true;
-			console.log('cn valid');
 		} else {
 			$cardNumberField.prop('style', 'border:2px solid red');
 			if ($('#card-number-error').length < 1) {
@@ -300,7 +299,6 @@ $submitButton.on('click', (e) => {
 
 		if (zipCodeRegex.test($zipCodeField.val())) {
 			isZipCodeValid = true;
-			console.log('zipcode valid');
 		} else {
 			$zipCodeField.prop('style', 'border:2px solid red');
 			if ($('#zip-code-error').length < 1) {
@@ -310,7 +308,6 @@ $submitButton.on('click', (e) => {
 
 		if (cvvRegex.test($cvvField.val())) {
 			isCvvValid = true;
-			console.log('cvv valid');
 		} else {
 			$cvvField.prop('style', 'border:2px solid red');
 			if ($('#cvv-error').length < 1) {
