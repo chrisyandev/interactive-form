@@ -84,7 +84,18 @@ $tshirtDesignSelect.on('change', () => {
 });
 
 $activitiesCollection.on('click', (e) => {
-	// Finds a string with format T00:00:00- which denotes the start time
+	// Finds and compares two strings
+	function daysAreSame($objA, $objB, attribute) {
+		const dayRegex = /^[A-Z][a-z]+day/;
+		const objA_Day = $objA.attr(attribute).match(dayRegex);
+		const objB_Day = $objB.attr(attribute).match(dayRegex);
+		if (objA_Day[0] === objB_Day[0]) {
+			return true;
+		}
+		return false;
+	}
+
+	// Finds and returns a string with format T00:00:00-
 	function findStartTime(string) {
 		const startTimeRegex = /T(0[0-9]|1[0-9]|2[0-3]|[0-9]):([0-5][0-9]):([0-5][0-9])-/;
 		if (startTimeRegex.test(string)) {
@@ -93,7 +104,7 @@ $activitiesCollection.on('click', (e) => {
 		return null;
 	}
 
-	// Finds a string with format -T00:00:00 which denotes the end time
+	// Finds and returns a string with format -T00:00:00
 	function findEndTime(string) {
 		const endTimeRegex = /-T(0[0-9]|1[0-9]|2[0-3]|[0-9]):([0-5][0-9]):([0-5][0-9])$/;
 		if (endTimeRegex.test(string)) {
@@ -107,55 +118,52 @@ $activitiesCollection.on('click', (e) => {
 	}
 
 	// Returns the start and end time in milliseconds
-	function findAndConvertTime(checkbox) {
-		const $dayAndTime = checkbox.attr('data-day-and-time');
-		const startTime = findStartTime($dayAndTime);
-		const endTime = findEndTime($dayAndTime);
+	function findAndConvertTime(obj, attribute) {
+		const dayAndTime = obj.attr(attribute);
+		const startTime = findStartTime(dayAndTime);
+		const endTime = findEndTime(dayAndTime);
 		if (startTime === null || endTime === null) {
 			return null;
 		}
 		const startTimeInMs = toMilliseconds(startTime[1], startTime[2], startTime[3]);
-		const endTimeInMs = toMilliseconds(endTime[1], endTime[2], endTime[3]);
-		const obj = {
+		const endTimeInMs = toMilliseconds(endTime[1], endTime[2], endTime[3]); 
+		return {
 			start: startTimeInMs,
 			end: endTimeInMs
 		};
-		return obj;
 	}
 
 	/* Tests if a time range overlaps with another time range. Takes into account
 	situations where a range's start and end are inside another range (eg. 2-4 and 1-5).
 	Start times are allowed to overlap with end times. */
-	function timeIsAvailable(a_Start, a_End, b_Start, b_End) {
+	function timeOverlaps(a_Start, a_End, b_Start, b_End) {
 		if (a_Start >= b_Start && a_Start < b_End) {
-			return false;
+			return true;
 		}
 		if (a_End > b_Start && a_End <= b_End) {
-			return false;
+			return true;
 		}
 		if (b_Start >= a_Start && b_Start < a_End) {
-			return false;
+			return true;
 		}
 		if (b_End > a_Start && b_End <= a_End) {
-			return false;
+			return true;
 		}
-		return true;
+		return false;
 	}
 
 	const $elementTarget = $(e.target);
-	const targetTime = findAndConvertTime($elementTarget);
-	const $targetName = $elementTarget.attr('name');
-	// Adds to running total, appends it, and adds an object associated with e.target
+	const targetTime = findAndConvertTime($elementTarget, 'data-day-and-time');
+	const targetName = $elementTarget.attr('name');
+	// Adds to running total, appends it, and adds an object associated with '$elementTarget'
 	if ($elementTarget.is(':checked')) {
 		const costInInteger = parseInt($elementTarget.attr('data-cost').match(/\d+/));
 		runningTotal += costInInteger;
-
 		checkedActivities.push({
-			name: $targetName,
+			name: targetName,
 			disabled: []
 		});
-
-		// Appends if it's the first checkbox checked, else updates appended value.
+		// Appends if it's the first checkbox checked, else updates appended value
 		if (checkedActivities.length === 1) {
 			$('fieldset.activities').append('<span id="running-total">Total: $' + runningTotal + '</span>');
 		} else {
@@ -163,27 +171,30 @@ $activitiesCollection.on('click', (e) => {
 		}
 	}
 
-	// If we are checking a checkbox, and if this checkbox has a time, loop through all checkboxes
+	// If we are checking a checkbox, and if this checkbox has a time, compare it with all checkboxes
 	if ($elementTarget.is(':checked') && targetTime !== null) {
 		for (let i = 0; i < $activitiesCollection.length; i++) {
 			const $ithCheckbox = $activitiesCollection.eq(i);
-			const ithCheckboxTime = findAndConvertTime($ithCheckbox);
-			/* Skips checked checkboxes and ones that don't have a time. 
-			Adds to the 'disabled' property of object associated with e.target. */
+			const ithCheckboxTime = findAndConvertTime($ithCheckbox, 'data-day-and-time');
+			/* Skips checked checkboxes and ones that don't have a time. If day and time
+			overlaps, disable '$ithCheckbox' and saves a reference of it in the 'disabled'
+			property of object associated with '$elementTarget'. */
 			if (!($ithCheckbox.is(':checked')) && ithCheckboxTime !== null) {
-				if (!timeIsAvailable(ithCheckboxTime.start, ithCheckboxTime.end, targetTime.start, targetTime.end)) {
+				console.log(daysAreSame($ithCheckbox, $elementTarget, 'data-day-and-time'));
+				if (daysAreSame($ithCheckbox, $elementTarget, 'data-day-and-time')
+				&& timeOverlaps(ithCheckboxTime.start, ithCheckboxTime.end, targetTime.start, targetTime.end)) {
 					$ithCheckbox.attr('disabled', true);
 					const checkedActivity = checkedActivities.find((obj) => {
-						return obj.name === $targetName;
+						return obj.name === targetName;
 					});
 					checkedActivity.disabled.push($ithCheckbox.attr('name'));
 				}
 			}
 		}
-	// If we are unchecking the checkbox. Get the disabled checkboxes associated with e.target, and enable them.
+	// If we are unchecking the checkbox. Get the disabled checkboxes associated with '$elementTarget', and enable them.
 	} else if (!($elementTarget.is(':checked')) && targetTime !== null) {
 		const checkedActivity = checkedActivities.find((obj) => {
-			return obj.name === $targetName;
+			return obj.name === targetName;
 		});
 		for (const x of checkedActivity.disabled) {
 			const $checkbox = $('.activities [name="' + x + '"]');
@@ -191,17 +202,15 @@ $activitiesCollection.on('click', (e) => {
 		}
 	}
 
-	// Subtracts from running total and removes object associated with e.target
+	// Subtracts from running total and removes object associated with '$elementTarget'
 	if (!($elementTarget.is(':checked'))) {
 		const costInInteger = parseInt($elementTarget.attr('data-cost').match(/\d+/));
 		runningTotal -= costInInteger;
-
 		const checkedActivityIndex = checkedActivities.findIndex((obj) => {
-			return obj.name === $targetName;
+			return obj.name === targetName;
 		});
 		checkedActivities.splice(checkedActivityIndex, 1);
-
-		// Removes running total if no checkboxes checked, else updates appended value.
+		// Removes running total if no checkboxes checked, else updates appended value
 		if (checkedActivities.length === 0) {
 			$('#running-total').remove();
 		} else {
@@ -249,11 +258,16 @@ $submitButton.on('click', (e) => {
 	const cvvRegex = /^[0-9]{3}$/;
 
 	// Resets error messages because some fields may be valid when user submits again
+	$nameField.prop('style', '');
 	$('#name-error').remove();
+	$emailField.prop('style', '');
 	$('#email-error').remove();
 	$('#activities-error').remove();
+	$cardNumberField.prop('style', '');
 	$('#card-number-error').remove();
+	$zipCodeField.prop('style', '');
 	$('#zip-code-error').remove();
+	$cvvField.prop('style', '');
 	$('#cvv-error').remove();
 
 	/* The following 'if' conditions tests if user input satisfies certain conditions.
@@ -267,16 +281,15 @@ $submitButton.on('click', (e) => {
 			$nameField.after('<div id="name-error" style="color:red;padding-bottom:15px">Invalid Name</div>');
 		}
 	}
-
 	if (emailRegex.test($emailField.val())) {
 		isEmailValid = true;
 	} else {
 		$emailField.prop('style', 'border:2px solid red');
 		if ($('#email-error').length < 1) {
-			$emailField.after('<div id="email-error" style="color:red;padding-bottom:15px">Invalid Email</div>');
+			$emailField.after(`<div id="email-error" style="color:red;padding-bottom:15px">
+								Invalid Email</div>`);
 		}
 	}
-
 	if (checkedActivities.length > 0) {
 		isAnyActivityChecked = true;
 	} else {
@@ -286,26 +299,25 @@ $submitButton.on('click', (e) => {
 								Must select at least one activity</div>`);
 		}
 	}
-
 	if ($paymentSelect.val() === 'Credit Card') {
 		if (creditCardRegex.test($cardNumberField.val())) {
 			isCardNumberValid = true;
 		} else {
 			$cardNumberField.prop('style', 'border:2px solid red');
 			if ($('#card-number-error').length < 1) {
-				$cardNumberField.after('<div id="card-number-error" style="color:red;padding-bottom:15px">Invalid Card Number</div>');
+				$cardNumberField.after(`<div id="card-number-error" style="color:red;padding-bottom:15px">
+										Invalid Card Number</div>`);
 			}
 		}
-
 		if (zipCodeRegex.test($zipCodeField.val())) {
 			isZipCodeValid = true;
 		} else {
 			$zipCodeField.prop('style', 'border:2px solid red');
 			if ($('#zip-code-error').length < 1) {
-				$zipCodeField.after('<div id="zip-code-error" style="color:red;padding-bottom:15px">Invalid Zip Code</div>');
+				$zipCodeField.after(`<div id="zip-code-error" style="color:red;padding-bottom:15px">
+									Invalid Zip Code</div>`);
 			}
 		}
-
 		if (cvvRegex.test($cvvField.val())) {
 			isCvvValid = true;
 		} else {
@@ -315,10 +327,12 @@ $submitButton.on('click', (e) => {
 			}
 		}
 	}
-
 	// If any field is invalid, don't submit
-	if (isNameValid === false || isEmailValid === false || isAnyActivityChecked === false
-		|| isCardNumberValid === false || isZipCodeValid === false || isCvvValid === false) {
+	if (isNameValid === false || isEmailValid === false || isAnyActivityChecked === false) {
+		e.preventDefault();
+	}
+	if ($paymentSelect.val() === 'Credit Card' && (isCardNumberValid === false || 
+		isZipCodeValid === false || isCvvValid === false)) {
 		e.preventDefault();
 	}
 });
