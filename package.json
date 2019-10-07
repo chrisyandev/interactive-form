@@ -15,9 +15,5 @@
   "bugs": {
     "url": "https://github.com/chrisyandev/interactive-form/issues"
   },
-  "homepage": "https://github.com/chrisyandev/interactive-form#readme",
-  "dependencies": {
-    "jquery": "^3.4.1",
-    "normalize.css": "^8.0.1"
-  }
+  "homepage": "https://github.com/chrisyandev/interactive-form#readme"
 }
