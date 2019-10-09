@@ -126,7 +126,7 @@ $activitiesCollection.on('click', (e) => {
 			return null;
 		}
 		const startTimeInMs = toMilliseconds(startTime[1], startTime[2], startTime[3]);
-		const endTimeInMs = toMilliseconds(endTime[1], endTime[2], endTime[3]); 
+		const endTimeInMs = toMilliseconds(endTime[1], endTime[2], endTime[3]);
 		return {
 			start: startTimeInMs,
 			end: endTimeInMs
@@ -182,7 +182,7 @@ $activitiesCollection.on('click', (e) => {
 			if (!($ithCheckbox.is(':checked')) && ithCheckboxTime !== null) {
 				console.log(daysAreSame($ithCheckbox, $elementTarget, 'data-day-and-time'));
 				if (daysAreSame($ithCheckbox, $elementTarget, 'data-day-and-time')
-				&& timeOverlaps(ithCheckboxTime.start, ithCheckboxTime.end, targetTime.start, targetTime.end)) {
+					&& timeOverlaps(ithCheckboxTime.start, ithCheckboxTime.end, targetTime.start, targetTime.end)) {
 					$ithCheckbox.attr('disabled', true);
 					const checkedActivity = checkedActivities.find((obj) => {
 						return obj.name === targetName;
@@ -191,7 +191,7 @@ $activitiesCollection.on('click', (e) => {
 				}
 			}
 		}
-	// If we are unchecking the checkbox. Get the disabled checkboxes associated with '$elementTarget', and enable them.
+		// If we are unchecking the checkbox. Get the disabled checkboxes associated with '$elementTarget', and enable them.
 	} else if (!($elementTarget.is(':checked')) && targetTime !== null) {
 		const checkedActivity = checkedActivities.find((obj) => {
 			return obj.name === targetName;
@@ -270,6 +270,10 @@ $submitButton.on('click', (e) => {
 	$cvvField.prop('style', '');
 	$('#cvv-error').remove();
 
+	function insertErrorMessage(element, newDivId, message) {
+		element.after(`<div id=${newDivId} style="color:red;padding-bottom:15px">${message}</div>`);
+	}
+
 	/* The following 'if' conditions tests if user input satisfies certain conditions.
 	If a particular input is not valid, an error message is appended if it does not
 	exist already. */
@@ -278,7 +282,7 @@ $submitButton.on('click', (e) => {
 	} else {
 		$nameField.prop('style', 'border:2px solid red');
 		if ($('#name-error').length < 1) {
-			$nameField.after('<div id="name-error" style="color:red;padding-bottom:15px">Invalid Name</div>');
+			insertErrorMessage($nameField, 'name-error', 'Invalid Name');
 		}
 	}
 	if (emailRegex.test($emailField.val())) {
@@ -286,8 +290,7 @@ $submitButton.on('click', (e) => {
 	} else {
 		$emailField.prop('style', 'border:2px solid red');
 		if ($('#email-error').length < 1) {
-			$emailField.after(`<div id="email-error" style="color:red;padding-bottom:15px">
-								Invalid Email</div>`);
+			insertErrorMessage($emailField, 'email-error', 'Invalid Email');
 		}
 	}
 	if (checkedActivities.length > 0) {
@@ -295,8 +298,7 @@ $submitButton.on('click', (e) => {
 	} else {
 		if ($('#activities-error').length < 1) {
 			const $lastLabel = $activitiesCollection.eq($activitiesCollection.length - 1).parent();
-			$lastLabel.after(`<div id="activities-error" style="color:red;padding-bottom:15px">
-								Must select at least one activity</div>`);
+			insertErrorMessage($lastLabel, 'activities-error', 'Must select at least one activity');
 		}
 	}
 	if ($paymentSelect.val() === 'Credit Card') {
@@ -305,8 +307,7 @@ $submitButton.on('click', (e) => {
 		} else {
 			$cardNumberField.prop('style', 'border:2px solid red');
 			if ($('#card-number-error').length < 1) {
-				$cardNumberField.after(`<div id="card-number-error" style="color:red;padding-bottom:15px">
-										Invalid Card Number</div>`);
+				insertErrorMessage($cardNumberField, 'card-number-error', 'Invalid Card Number');
 			}
 		}
 		if (zipCodeRegex.test($zipCodeField.val())) {
@@ -314,8 +315,7 @@ $submitButton.on('click', (e) => {
 		} else {
 			$zipCodeField.prop('style', 'border:2px solid red');
 			if ($('#zip-code-error').length < 1) {
-				$zipCodeField.after(`<div id="zip-code-error" style="color:red;padding-bottom:15px">
-									Invalid Zip Code</div>`);
+				insertErrorMessage($zipCodeField, 'zip-code-error', 'Invalid Zip Code');
 			}
 		}
 		if (cvvRegex.test($cvvField.val())) {
@@ -323,7 +323,7 @@ $submitButton.on('click', (e) => {
 		} else {
 			$cvvField.prop('style', 'border:2px solid red');
 			if ($('#cvv-error').length < 1) {
-				$cvvField.after('<div id="cvv-error" style="color:red;padding-bottom:15px">Invalid CVV</div>');
+				insertErrorMessage($cvvField, 'cvv-error', 'Invalid CVV');
 			}
 		}
 	}
@@ -331,7 +331,7 @@ $submitButton.on('click', (e) => {
 	if (isNameValid === false || isEmailValid === false || isAnyActivityChecked === false) {
 		e.preventDefault();
 	}
-	if ($paymentSelect.val() === 'Credit Card' && (isCardNumberValid === false || 
+	if ($paymentSelect.val() === 'Credit Card' && (isCardNumberValid === false ||
 		isZipCodeValid === false || isCvvValid === false)) {
 		e.preventDefault();
 	}
